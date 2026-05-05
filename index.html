@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ata de Reunião – MENP </title>
+<title>Ata de Reunião Colaborativa – MENP</title>
 <style>
   /* ── ESTILOS GERAIS ── */
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,26 +15,27 @@
     display: flex; align-items: center; justify-content: space-between;
     position: sticky; top: 0; z-index: 1000;
   }
+  .toolbar-actions { display: flex; gap: 10px; }
   .btn {
     padding: 8px 16px; border-radius: 4px; border: none;
     font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s;
+    display: inline-flex; align-items: center; gap: 5px;
   }
   .btn-outline { background: transparent; border: 1px solid #fff; color: #fff; }
   .btn-primary { background: #fff; color: #1a1a2e; }
+  .btn-colab { background: #ff5722; color: #fff; } /* Cor de destaque para colaboração */
   .btn-outline:hover { background: rgba(255,255,255,0.1); }
 
-  /* ── ESTRUTURA DO DOCUMENTO (PDF) ── */
+  /* ── ESTRUTURA DO DOCUMENTO ── */
   #wrapper {
     max-width: 850px; margin: 30px auto;
     background: #fff; padding: 40px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
-  /* Truque para repetir cabeçalho em todas as páginas na impressão */
   table.main-layout { width: 100%; border-collapse: collapse; }
   thead { display: table-header-group; }
 
-  /* Cabeçalho Visual */
   .header-box { width: 100%; border: 1.5px solid #000; margin-bottom: 20px; }
   .header-top { display: flex; border-bottom: 1.5px solid #000; }
   .header-title {
@@ -45,26 +46,21 @@
   .header-logo img { max-height: 60px; }
   .header-entities { text-align: center; padding: 5px; font-weight: bold; min-height: 30px; }
 
-  /* Seções */
   .section { margin-bottom: 20px; border: 1.5px solid #000; }
   .section-title { background: #f0f0f0; padding: 10px; font-weight: bold; text-align: center; border-bottom: 1.5px solid #000; }
   .section-title-left { background: #f0f0f0; padding: 8px 12px; font-weight: bold; border-bottom: 1.5px solid #000; }
   
-  /* Grids e Inputs */
   .fields-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; }
   .field-cell { border-right: 1.5px solid #000; }
   .field-cell:last-child { border-right: none; }
   .field-label { display: block; font-size: 11px; font-weight: bold; padding: 4px 8px; border-bottom: 1px solid #000; }
   .field-input { width: 100%; border: none; padding: 8px; outline: none; font-size: 14px; }
   
-  /* Tabela de Participantes */
   .part-table { width: 100%; border-collapse: collapse; }
   .part-table th, .part-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 0; }
   .part-table th { background: #fff; padding: 8px; font-size: 12px; text-align: left; }
   .part-table td input { width: 100%; border: none; padding: 10px; outline: none; }
-  .part-table tr:last-child td { border-bottom: none; }
 
-  /* Textareas Automáticas */
   .auto-textarea {
     width: 100%; min-height: 100px; padding: 12px; border: none;
     resize: none; font-family: inherit; font-size: 14px; outline: none;
@@ -72,58 +68,27 @@
 
   .no-print-btn { background: #f0f0f0; border: 1px dashed #999; padding: 5px 10px; cursor: pointer; margin: 10px; font-size: 12px; }
 
+  /* ── AJUSTES DE IMPRESSÃO ── */
   @media print {
-  @page { size: A4; margin: 15mm; }
-  
-  body { background: #fff !important; }
-  #toolbar, .no-print-btn, .action-cell, .no-print { display: none !important; }
-  #wrapper { max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
-  .page-break { page-break-before: always; }
-
-  /* 1. ESCONDE ÍCONES DE CALENDÁRIO E RELÓGIO (Chrome/Edge/Safari) */
-  input::-webkit-calendar-picker-indicator {
-    display: none !important;
-    -webkit-appearance: none;
+    body { background: #fff; }
+    #toolbar, .no-print-btn, .action-cell, .togetherjs-container { display: none !important; }
+    #wrapper { margin: 0; padding: 0; box-shadow: none; max-width: 100%; }
+    .page-break { page-break-before: always; }
+    input::-webkit-calendar-picker-indicator { display: none !important; }
   }
-
-  /* 2. TRANSFORMA INPUTS EM TEXTO PLANO */
-  input, textarea {
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    outline: none !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    appearance: none;
-    -webkit-appearance: none;
-  }
-
-  /* Garante que o texto digitado apareça claramente */
-  .field-input, .auto-textarea {
-    font-size: 11pt !important;
-    margin-top: 2px;
-  }
-
-  /* 3. AJUSTA A TABELA DE PARTICIPANTES PARA FICAR MAIS LIMPA */
-  .part-table th { 
-    background: #f0f0f0 !important; 
-    -webkit-print-color-adjust: exact; 
-  }
-  .part-table td {
-    height: 40px; /* Altura fixa para assinatura */
-    vertical-align: middle;
-  }
-  
-  /* Remove o cinza de fundo dos campos durante a impressão */
-  .field-readonly { background: transparent !important; border: none !important; }
-}
 </style>
 </head>
 <body>
 
+<!-- TOOLBAR COM BOTÃO TOGETHERJS -->
 <div id="toolbar">
   <h1>📋 Gerador de Ata — MENP</h1>
   <div class="toolbar-actions">
+    <!-- BOTÃO TOGETHERJS -->
+    <button class="btn btn-colab" onclick="TogetherJS(this); return false;">
+      👥 Iniciar Colaboração
+    </button>
+    
     <button class="btn btn-outline" onclick="location.reload()">🗑 Limpar</button>
     <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir / PDF</button>
   </div>
@@ -139,7 +104,7 @@
               <div class="header-title">ATA DE REUNIÃO MENP</div>
               <div class="header-logo"><img src="logo.png" alt="Logo"></div>
             </div>
-            <div class="header-entities" id="entidades-header" contenteditable="true"></div>
+            <div class="header-entities" id="entidades-header" contenteditable="true">EDITAR ENTIDADES AQUI</div>
           </div>
         </td>
       </tr>
@@ -147,10 +112,9 @@
     <tbody>
       <tr>
         <td>
-          <!-- DADOS BÁSICOS -->
           <div class="section">
             <div class="fields-grid">
-              <div class="field-cell"><span class="field-label">Local</span><input type="text" class="field-input" placeholder="Local da reunião"></div>
+              <div class="field-cell"><span class="field-label">Local</span><input type="text" class="field-input"></div>
               <div class="field-cell"><span class="field-label">Data</span><input type="date" class="field-input"></div>
               <div class="field-cell"><span class="field-label">Início</span><input type="time" class="field-input" id="h-ini" oninput="calcDuracao()"></div>
               <div class="field-cell"><span class="field-label">Fim</span><input type="time" class="field-input" id="h-fim" oninput="calcDuracao()"></div>
@@ -158,9 +122,8 @@
             </div>
           </div>
 
-          <!-- PARTICIPANTES -->
           <div class="section">
-            <div class="section-title">Participantes</div>
+            <div class="section-title-left">Participantes</div>
             <table class="part-table" id="tabela-participantes">
               <thead>
                 <tr>
@@ -184,16 +147,14 @@
 
           <div class="page-break"></div>
 
-          <!-- OBJETIVO -->
           <div class="section">
             <div class="section-title">Objetivo da Reunião</div>
             <textarea class="auto-textarea" oninput="autoResize(this)" placeholder="Descreva os objetivos..."></textarea>
           </div>
 
-          <!-- ENCAMINHAMENTOS -->
           <div class="section">
             <div class="section-title">Encaminhamentos</div>
-            <textarea class="auto-textarea" oninput="autoResize(this)" placeholder="Registre as decisões e responsáveis..."></textarea>
+            <textarea class="auto-textarea" oninput="autoResize(this)" placeholder="Registre as decisões..."></textarea>
           </div>
         </td>
       </tr>
@@ -202,6 +163,11 @@
 </div>
 
 <script>
+  // CONFIGURAÇÃO DO TOGETHERJS (Opcional, mas ajuda no visual)
+  var TogetherJSConfig_siteName = "Gerador de Atas MENP";
+  var TogetherJSConfig_toolName = "Colaboração em Tempo Real";
+  var TogetherJSConfig_lang = "pt-BR";
+
   function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
@@ -219,7 +185,7 @@
     if (ini && fim) {
       const t1 = new Date(`2000-01-01T${ini}`);
       const t2 = new Date(`2000-01-01T${fim}`);
-      let diff = (t2 - t1) / 1000 / 60; // em minutos
+      let diff = (t2 - t1) / 1000 / 60;
       if (diff < 0) diff += 1440; 
       const h = Math.floor(diff / 60);
       const m = diff % 60;
@@ -227,6 +193,9 @@
     }
   }
 </script>
+
+<!-- SCRIPT DO TOGETHERJS -->
+<script src="https://togetherjs.com/togetherjs-min.js"></script>
 
 </body>
 </html>
