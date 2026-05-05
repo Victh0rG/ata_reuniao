@@ -160,38 +160,6 @@
   </table>
 </div>
 
-<script>
-  // CONFIGURAÇÃO DO TOGETHERJS (Opcional, mas ajuda no visual)
-  var TogetherJSConfig_siteName = "Gerador de Atas MENP";
-  var TogetherJSConfig_toolName = "Colaboração em Tempo Real";
-  var TogetherJSConfig_lang = "pt-BR";
-
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-  }
-
-  function addLinha() {
-    const tbody = document.querySelector('#tabela-participantes tbody');
-    const newRow = tbody.insertRow();
-    newRow.innerHTML = `<td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td></td>`;
-  }
-
-  function calcDuracao() {
-    const ini = document.getElementById('h-ini').value;
-    const fim = document.getElementById('h-fim').value;
-    if (ini && fim) {
-      const t1 = new Date(`2000-01-01T${ini}`);
-      const t2 = new Date(`2000-01-01T${fim}`);
-      let diff = (t2 - t1) / 1000 / 60;
-      if (diff < 0) diff += 1440; 
-      const h = Math.floor(diff / 60);
-      const m = diff % 60;
-      document.getElementById('duracao').value = `${h}h ${m}min`;
-    }
-  }
-</script>
-
 <!-- SCRIPTS DO FIREBASE NO FINAL DO BODY -->
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
