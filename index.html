@@ -85,9 +85,7 @@
   <h1>📋 Gerador de Ata — MENP</h1>
   <div class="toolbar-actions">
     <!-- BOTÃO TOGETHERJS -->
-    <button class="btn btn-colab" onclick="TogetherJS(this); return false;">
-      👥 Iniciar Colaboração
-    </button>
+    <button class="btn btn-colab" onclick="gerarNovoLink()">🔗 Gerar Nova Sessão</button>
     
     <button class="btn btn-outline" onclick="location.reload()">🗑 Limpar</button>
     <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir / PDF</button>
@@ -194,8 +192,107 @@
   }
 </script>
 
-<!-- SCRIPT DO TOGETHERJS -->
-<script src="https://togetherjs.com/togetherjs-min.js"></script>
+<!-- SCRIPTS DO FIREBASE NO FINAL DO BODY -->
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+  // 1. CONFIGURAÇÃO (COLOQUE SEU URL AQUI)
+  const firebaseConfig = {
+    databaseURL: "https://ata-reuniao-d2d12-default-rtdb.firebaseio.com/", 
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // 2. CONTROLE DE SESSÃO (Meeting ID)
+  const urlParams = new URLSearchParams(window.location.search);
+  let meetingId = urlParams.get('session');
+
+  if (!meetingId) {
+    // Se não houver sessão na URL, o sistema funciona apenas localmente
+    console.log("Modo local. Clique em 'Gerar Nova Sessão' para colaborar.");
+  }
+
+  function gerarNovoLink() {
+    const novoId = 'ata_' + Math.random().toString(36).substr(2, 9);
+    window.location.href = window.location.pathname + '?session=' + novoId;
+  }
+
+  // 3. SINCRONIZAÇÃO EM TEMPO REAL
+  function syncField(el) {
+    if (!meetingId) return;
+    
+    // Criamos uma chave única baseada no ID ou ordem do elemento
+    const fieldId = el.id || el.placeholder || Array.from(document.querySelectorAll('input, textarea')).indexOf(el);
+    
+    // Envia para o Firebase
+    db.ref(meetingId + '/fields/' + fieldId).set(el.value);
+  }
+
+  // Escuta mudanças no Banco de Dados
+  if (meetingId) {
+    db.ref(meetingId + '/fields/').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      Object.keys(data).forEach(key => {
+        const val = data[key];
+        // Tenta achar o elemento pelo ID ou pela posição
+        let el = document.getElementById(key) || document.querySelectorAll('input, textarea')[key];
+        
+        if (el && el.value !== val) {
+          el.value = val;
+          // Se for uma textarea, ajusta o tamanho
+          if (el.tagName === 'TEXTAREA') autoResize(el);
+        }
+      });
+    });
+    
+    // Sincroniza o cabeçalho contenteditable
+    const header = document.getElementById('entidades-header');
+    header.addEventListener('input', () => {
+      db.ref(meetingId + '/header').set(header.innerText);
+    });
+    db.ref(meetingId + '/header').on('value', snap => {
+      if(snap.val() && header.innerText !== snap.val()) header.innerText = snap.val();
+    });
+  }
+
+  // Eventos para detectar digitação
+  document.addEventListener('input', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      syncField(e.target);
+    }
+  });
+
+  // 4. FUNÇÕES DE UTILIDADE (Originais)
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  function addLinha() {
+    const tbody = document.querySelector('#tabela-participantes tbody');
+    const newRow = tbody.insertRow();
+    newRow.innerHTML = `<td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td></td>`;
+  }
+
+  function calcDuracao() {
+    const ini = document.getElementById('h-ini').value;
+    const fim = document.getElementById('h-fim').value;
+    if (ini && fim) {
+      const t1 = new Date(`2000-01-01T${ini}`);
+      const t2 = new Date(`2000-01-01T${fim}`);
+      let diff = (t2 - t1) / 1000 / 60;
+      if (diff < 0) diff += 1440; 
+      const h = Math.floor(diff / 60);
+      const m = diff % 60;
+      const res = `${h}h ${m}min`;
+      document.getElementById('duracao').value = res;
+      syncField(document.getElementById('duracao'));
+    }
+  }
+</script>
 
 </body>
 </html>
