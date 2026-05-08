@@ -147,12 +147,12 @@
 
           <div class="section">
             <div class="section-title">Objetivo da Reunião</div>
-            <textarea class="auto-textarea" oninput="autoResize(this)" placeholder="Descreva os objetivos..."></textarea>
+            <textarea id="campo-objetivo" class="auto-textarea" oninput="autoResize(this)" placeholder="Descreva os objetivos..."></textarea>
           </div>
 
           <div class="section">
             <div class="section-title">Encaminhamentos</div>
-            <textarea class="auto-textarea" oninput="autoResize(this)" placeholder="Registre as decisões..."></textarea>
+            <textarea id="campo-encaminhamentos" class="auto-textarea" oninput="autoResize(this)" placeholder="Registre as decisões..."></textarea>
           </div>
         </td>
       </tr>
@@ -192,7 +192,7 @@
     
     // Criamos uma chave única baseada no ID ou ordem do elemento
     const fieldId = el.id || el.placeholder || Array.from(document.querySelectorAll('input, textarea')).indexOf(el);
-    
+    const cleanId = rawId.replace(/[.#$[\]\s]/g, '_'); // Remove caracteres proibidos pelo Firebase
     // Envia para o Firebase
     db.ref(meetingId + '/fields/' + fieldId).set(el.value);
   }
@@ -239,11 +239,76 @@
     el.style.height = el.scrollHeight + 'px';
   }
 
-  function addLinha() {
-    const tbody = document.querySelector('#tabela-participantes tbody');
-    const newRow = tbody.insertRow();
-    newRow.innerHTML = `<td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td></td>`;
+// --- 1. FUNÇÃO PARA ADICIONAR LINHA (SINCRONIZADA) ---
+function addLinha() {
+  if (!meetingId) {
+    // Se estiver em modo local, apenas cria a linha
+    renderizarLinha(Date.now());
+    return;
   }
+  // No modo colaborativo, envia um sinal para o Firebase criar a linha para todos
+  const novaLinhaRef = db.ref(meetingId + '/estrutura/participantes').push();
+  novaLinhaRef.set({ criadoEm: firebase.database.ServerValue.TIMESTAMP });
+}
+
+// --- 2. FUNÇÃO QUE DESENHA A LINHA NO HTML ---
+function renderizarLinha(idUnico) {
+  const tbody = document.querySelector('#tabela-participantes tbody');
+  
+  // Verificamos se a linha já existe para não duplicar
+  if (document.getElementById('tr-' + idUnico)) return;
+
+  const newRow = tbody.insertRow();
+  newRow.id = 'tr-' + idUnico;
+  
+  // Criamos os campos com IDs únicos vinculados ao ID do Firebase
+  newRow.innerHTML = `
+    <td><input type="text" id="nome_${idUnico}" placeholder="Nome"></td>
+    <td><input type="text" id="cargo_${idUnico}" placeholder="Cargo"></td>
+    <td><input type="text" id="unid_${idUnico}" placeholder="Unidade"></td>
+    <td></td>
+  `;
+}
+
+// --- 3. ESCUTANDO O FIREBASE PARA NOVAS LINHAS ---
+if (meetingId) {
+  // Sempre que uma linha for adicionada no banco, ela aparece para todos
+  db.ref(meetingId + '/estrutura/participantes').on('child_added', (snapshot) => {
+    renderizarLinha(snapshot.key);
+  });
+
+  // Sincronização de todos os campos (Inputs e Textareas)
+  db.ref(meetingId + '/fields/').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    Object.keys(data).forEach(key => {
+      const val = data[key];
+      let el = document.getElementById(key);
+      
+      // Se o elemento existe e o valor é diferente, atualiza
+      if (el && el.value !== val) {
+        el.value = val;
+        if (el.tagName === 'TEXTAREA') autoResize(el);
+      }
+    });
+  });
+}
+
+// --- 4. LISTENER DE DIGITAÇÃO (SINCRONIZAÇÃO DE TEXTO) ---
+document.addEventListener('input', (e) => {
+  if (!meetingId) return;
+  const el = e.target;
+  
+  if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+    // Usamos o ID do elemento como chave no Firebase
+    // Se o elemento não tiver ID (como os novos da tabela), criamos um baseado no ID da linha
+    const fieldId = el.id || "campo_" + Array.from(document.querySelectorAll('input, textarea')).indexOf(el);
+    const cleanId = fieldId.replace(/[.#$[\]\s]/g, '_');
+
+    db.ref(meetingId + '/fields/' + cleanId).set(el.value);
+  }
+});
 
   function calcDuracao() {
     const ini = document.getElementById('h-ini').value;
